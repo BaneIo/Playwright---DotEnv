@@ -5,7 +5,6 @@ on:
     inputs:
       test_target:
         description:
-
         required: true
         default: "."
       test_name:
@@ -22,6 +21,9 @@ on:
           - firefox
           - webkit
           - all
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -49,20 +51,17 @@ jobs:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-
           if [ "${{ github.event.inputs.browser }}" = "all" ]; then
             BROWSER_ARG=""
           else
             BROWSER_ARG="--project=${{ github.event.inputs.browser }}"
           fi
 
-
           if [ -z "${{ github.event.inputs.test_name }}" ]; then
             GREP_ARG=""
           else
             GREP_ARG="-g \"${{ github.event.inputs.test_name }}\""
           fi
-
 
           npx playwright test ${{ github.event.inputs.test_target }} $BROWSER_ARG $GREP_ARG
 
@@ -78,6 +77,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
+          publish_branch: gh-pages
+          force_orphan: true
 
       - name: Notify Slack
         if: always()
@@ -94,7 +95,7 @@ jobs:
 
           curl -X POST -H 'Content-type: application/json' \
           --data "{
-            \"text\": \"*Playwright Test Run Finished*\n*Status:* $STATUS\n*Target:* ${{ github.event.inputs.test_target }}\n*Browser:* ${{ github.event.inputs.browser }}\n*Report:* $REPORT_URL\"
+            \"text\": \"*Playwright Test Run Finished*\n*Status:* $STATUS\n*Target:* ${{ github.event.inputs.test_target }}\n*Browser:* ${{ github.event.inputs.browser }}\n*Report:* $REPORT_URL\" 
           }" $SLACK_WEBHOOK_URL
 
       - name: Upload Artifacts
